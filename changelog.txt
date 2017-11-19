@@ -1,0 +1,4 @@
+Changes since 0.8b..
+
+* dc96666 2017-11-18 16:42:03 -1000 -  (HEAD -> master) Build changes, ignore curseforge folder <opussf>
+* 0784cb0 2017-05-03 16:37:46 -0600 -  (origin/master, origin/develop, develop) wowStubs updated <opussf>

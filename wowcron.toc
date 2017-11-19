@@ -1,0 +1,10 @@
+## Interface: 70100
+## Title: WoWCron
+## Notes: Cron for WoW. v0.8b-2-gdc96666
+## Author: opussf
+## Version: 0.8b-2-gdc96666
+## Description: Cron for WoW
+## SavedVariables: cron_global cron_knownSlashCmds cron_knownEmotes
+## SavedVariablesPerCharacter: cron_player
+wowcron.lua
+wowcron.xml
