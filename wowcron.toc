@@ -1,4 +1,4 @@
-## Interface: 70100
+## Interface: 70300
 ## Title: WoWCron
 ## Notes: Cron for WoW. v0.8b-2-gdc96666
 ## Author: opussf
