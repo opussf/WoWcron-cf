@@ -49,17 +49,17 @@ wowCron.toRun = {}
 function wowCron.OnLoad()
 	SLASH_CRON1 = "/CRON"
 	SlashCmdList["CRON"] = function(msg) wowCron.Command(msg); end
-	wowCron_Frame:RegisterEvent("ADDON_LOADED")
-	wowCron_Frame:RegisterEvent("PLAYER_ENTERING_WORLD")
+	wowCron_Frame:RegisterEvent( "ADDON_LOADED" )
+	wowCron_Frame:RegisterEvent( "PLAYER_ENTERING_WORLD" )
+	wowCron_Frame:RegisterEvent( "PLAYER_ALIVE" )
 end
 function wowCron.OnUpdate()
-	-- if the toRun list has items, this should not be dead.
-	if coroutine.status(wowCron.processThread) ~= "dead" then
-		coroutine.resume(wowCron.processThread)
+	-- if there are still events in the queue to process
+	if( #wowCron.toRun > 0 ) then
+		wowCron.RunNowList()
 	end
-	nowTS = time()
-	local now = date( "*t", nowTS )
-	if (wowCron.lastUpdated < nowTS) and (now.sec == 0) then
+	local nowTS = time()
+	if (wowCron.lastUpdated < nowTS) and (nowTS % 60 == 0) then
 		wowCron.lastUpdated = nowTS
 		wowCron.BuildRunNowList() -- This is where building the list needs to happen.
 		--wowCron.Print("Update: "..#wowCron.toRun)
@@ -71,7 +71,6 @@ function wowCron.ADDON_LOADED()
 	wowCron.lastUpdated = time()
 	wowCron.ParseAll()
 	wowCron.BuildSlashCommands()
-	wowCron.processThread = coroutine.create(wowCron.RunNowList)
 	--wowCron.Print("Loaded")
 end
 function wowCron.PLAYER_ENTERING_WORLD()
@@ -80,6 +79,9 @@ function wowCron.PLAYER_ENTERING_WORLD()
 	wowCron.BuildSlashCommands()
 	wowCron.started = time()
 	wowCron.macros["@first"] = wowCron.BuildFirstCronMacro()
+end
+function wowCron.PLAYER_ALIVE()
+	-- @todo: set this up to do @first things.
 end
 -- Support Code
 function wowCron.BuildFirstCronMacro()
@@ -96,10 +98,10 @@ function wowCron.BuildRunNowList()
 			table.insert( wowCron.toRun, cmd )
 		end
 	end
-	wowCron.processThread = coroutine.create(wowCron.RunNowList)
 end
 function wowCron.RunNowList()
-	while (#wowCron.toRun > 0) do
+	-- run a single item from the list per update
+	if (#wowCron.toRun > 0) then
 		cmd = table.remove( wowCron.toRun, 1 )
 		--print("CMD: "..(cmd or "nil"))
 		if cmd then
@@ -111,7 +113,6 @@ function wowCron.RunNowList()
 				isGood = isGood or func( slash, parameters )
 			end
 		end
-		coroutine.yield()
 	end
 end
 -- Begin Handle commands
