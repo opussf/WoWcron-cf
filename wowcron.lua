@@ -16,8 +16,10 @@ COLOR_NEON_BLUE = "|cff4d4dff"
 COLOR_END = "|r"
 
 cron_global = {}
-cron_groups = {}  --
 cron_player = {}
+at_global = {}
+at_player = {}
+
 cron_knownSlashCmds = {}
 cron_knownEmotes = {}
 wowCron.events = {}
@@ -37,10 +39,11 @@ wowCron.monthNames = { "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "
 wowCron.macros = {  -- keep a 1 to 1 mapping for macro to event.
 	["@hourly"]   = { ["cron"] = "0 * * * *" },
 	["@midnight"] = { ["cron"] = "0 0 * * *" },
-	["@noon"] = { ["cron"] = "0 12 * * *" },
-	["@first"] = { ["event"] = "LOADING_SCREEN_DISABLED" },
-	["@gold"] = { ["event"] = "PLAYER_MONEY" },
-	["@level"] = { ["event"] = "PLAYER_LEVEL_UP" },
+	["@noon"]     = { ["cron"] = "0 12 * * *" },
+	["@teatime"]  = { ["cron"] = "0 16 * * *" },
+	["@first"]    = { ["event"] = "LOADING_SCREEN_DISABLED" },
+	["@gold"]     = { ["event"] = "PLAYER_MONEY" },
+	["@level"]    = { ["event"] = "PLAYER_LEVEL_UP" },
 }
 wowCron.chatChannels = {
 	["/s"]    = "SAY",
@@ -55,6 +58,8 @@ wowCron.toRun = {}
 function wowCron.OnLoad()
 	SLASH_CRON1 = "/CRON"
 	SlashCmdList["CRON"] = function(msg) wowCron.Command(msg); end
+	SLASH_AT1 = "/AT"
+	SlashCmdList["AT"] = function(msg) wowCron.AtCommand(msg); end
 	wowCron_Frame:RegisterEvent( "ADDON_LOADED" )
 	wowCron_Frame:RegisterEvent( "PLAYER_ENTERING_WORLD" )
 	wowCron_Frame:RegisterEvent( "LOADING_SCREEN_DISABLED" )
@@ -148,12 +153,28 @@ function wowCron.BuildRunNowList()
 			table.insert( wowCron.toRun, cmd )
 		end
 	end
+	-- AT cmds
+	local at_structs = { at_global, at_player }
+	now = time()
+	for _, at_struct in pairs( at_structs ) do
+		-- print( _, at_struct )
+		for ts, struct in pairs( at_struct ) do
+			-- print( "ts:", ts, struct )
+			if ts < time()-300 then -- missed by more than 5 minutes
+				at_struct[ts] = nil
+			elseif ts <= time() then -- give it a ~5 minute grace period
+				for _, cmd in ipairs( struct ) do
+					tinsert( wowCron.toRun, cmd )
+				end
+				at_struct[ts] = nil
+			end
+		end
+	end
 end
 function wowCron.RunNowList()
 	-- run a single item from the list per update
 	if (#wowCron.toRun > 0) then
 		cmd = table.remove( wowCron.toRun, 1 )
-		--print("CMD: "..(cmd or "nil"))
 		if cmd then
 			slash, parameters = wowCron.DeconstructCmd( cmd )
 			if wowCron.debug then print("do now: "..slash.." "..parameters) end
@@ -400,6 +421,29 @@ function wowCron.AddEntry( entry )
 	end
 	wowCron.ParseAll()
 end
+function wowCron.MoveEntry( strIn )
+	if strlen( strIn ) >= 3 then
+		cronTable = wowCron.global and cron_global or cron_player
+		local _, _, srcIndex, tarIndex = strfind( strIn, "(%d+)%s(%d+)" )
+		srcIndex = tonumber( srcIndex )
+		tarIndex = tonumber( tarIndex )
+		if srcIndex and tarIndex then
+			tarIndex = math.min( tarIndex, #cronTable )
+			if tarIndex <= 0 then tarIndex = 1; end
+			if (#cronTable >= srcIndex) then
+				mvCmd = table.remove( cronTable, srcIndex )
+				wowCron.Print( "Moving "..mvCmd.." from index: "..srcIndex.." to index: "..tarIndex )
+				table.insert( cronTable, tarIndex, mvCmd )
+			end
+			wowCron.List()
+		else
+			wowCron.Print( "From and to index need to be given and be numberic." )
+		end
+	else
+		wowCron.Print( "Usage: mv fromIndex toIndex" )
+	end
+
+end
 function wowCron.ListMacros()
 	wowCron.Print( "Available macros:" )
 	for macro, struct in pairs( wowCron.macros ) do
@@ -423,6 +467,10 @@ wowCron.CommandList = {
 	["rm"] = {
 		["func"] = wowCron.RemoveEntry,
 		["help"] = {"index", "Remove index entry."}
+	},
+	["mv"] = {
+		["func"] = wowCron.MoveEntry,
+		["help"] = {"fromIndex toIndex", "Move from to"}
 	},
 	["add"] = {
 		["func"] = wowCron.AddEntry,
@@ -451,4 +499,179 @@ function wowCron.Print( msg, showName)
 		msg = COLOR_GOLD..WOWCRON_MSG_ADDONNAME..COLOR_END.."> "..msg
 	end
 	DEFAULT_CHAT_FRAME:AddMessage( msg )
+end
+function wowCron.spairs( t )
+	local keys={}
+	for k in pairs(t) do keys[#keys+1] = k end
+	table.sort( keys )
+	local i = 0
+	return function()
+		i = i + 1
+		if keys[i] then
+			return keys[i], t[keys[i]]
+		end
+	end
+end
+function wowCron.AtList()
+	atTable = wowCron.global and at_global or at_player
+	wowCron.Print( "listing at entries for "..( wowCron.global and "global" or "personal" ) )
+	for ts, struct in wowCron.spairs( atTable ) do
+		for _, cmd in ipairs( struct ) do
+			print( date( "%c", ts)..": "..cmd )
+		end
+	end
+end
+wowCron.AtCommandList = {
+	["help"] = {
+		["func"] = wowCron.PrintHelp,
+		["help"] = { "", "Print this help." },
+	},
+	["global"] = {
+		["func"] = function( msg ) wowCron.AtCommand( msg, true ); end,
+		["help"] = { "<commands>", "Sets global flag" },
+	},
+	["list"] = {
+		["func"] = wowCron.AtList,
+		["help"] = { "", "List" },
+	},
+}
+function wowCron.AtCommand( msg, isGlobal )
+	wowCron.global = isGlobal
+	cmd, parameters = wowCron.DeconstructCmd( msg )
+	--print( cmd, parameters )
+	cmd = string.lower( cmd )
+	local cmdFunc = wowCron.AtCommandList[cmd]
+	if cmdFunc then
+		cmdFunc.func( parameters )
+	else
+		wowCron.AtAddEntry( msg )
+	end
+end
+function wowCron.AtAddEntry( msg )
+	if string.len(msg) == 0 then return; end
+	msg = string.lower( msg )
+	-- print( "AtAddEntry( "..msg.." )" )
+
+	local shortcuts = { ["noon"] = "12:00:00", ["midnight"] = "00:00:00", ["teatime"] = "16:00:00" }
+	local targetTime = date( "*t", time() )
+	shortcuts.now = date( "%H:%M", time(targetTime) )
+	shortcuts.tomorrow = date( "%m%d%Y", time()+86400 )
+
+	local targetTime = date( "*t" )
+	targetTime.sec = 0
+
+	local plusUnits = { ["minutes"] = 60, ["hours"] = 3600, ["days"] = 86400, ["weeks"] = 604800}
+	local plusValue = 0
+
+	msgItem, msg = strsplit( " ", msg, 2 )
+
+	while( msgItem ) do -- only parse as part of the time string.  A command starts with a "/"
+		local parsed = false
+		-- find and replace 'shortcut' string
+		msgItem = shortcuts[msgItem] or msgItem
+
+		-- print( "parsing: -->"..msgItem.."<-- with :"..(msg or "nil")..": left over" )
+		-- find a date.  Do this first because the time string is 'funky'
+		_, _, month, split, day, year = strfind( msgItem, "([%d]?%d)([/.-])([%d%d]+)[/]?([%d%d]*)" )
+		if not split and (string.len( msgItem ) == 6 or string.len( msgItem ) == 8) then
+			--print( "found a 6 or 8 digit date" )
+			a, _, month, day, year = strfind( msgItem, "(%d%d)(%d%d)(%d[%d]+)" )
+			if a then
+				split = "/"
+			end
+		end
+		-- date of the form MMDD[CC]YY, MM/DD/[CC]YY, DD.MM.[CC]YY or [CC]YY-MM-DD.
+		if( split == "." ) then
+			d = day
+			day = month
+			month = d
+		end
+		if( split == "-" ) then
+			y = year
+			year = month
+			month = day
+			day = y
+		end
+
+		-- print( "unswapped: "..( month or "nil").."/"..(day or "nil").."/"..(year or "nil").." split:"..( split or "nil" ) )
+		if( split ) then  -- split is / . or - (making this a date)
+			targetTime.month = month
+			targetTime.day = day
+			year = tonumber( year ) or targetTime.year
+			if( tonumber( year ) < 100 ) then
+				century = math.floor( targetTime.year / 100 ) * 100
+				year = century + year
+			end
+			targetTime.year = year
+			parsed = true
+		end
+
+		-- print( "After date parse: "..date( "%x %X", time( targetTime ) ) )
+
+		if not parsed then
+
+			-- find a time string
+			-- if( tonumber( msgItem ) and tonumber( msgItem ) < 1000 ) then -- if the item is a number less than 1000, add a "0" to the start.
+			-- 	msgItem = "0"..msgItem
+			-- end
+			a, b, hourIn, minIn = strfind( msgItem, "([%d]?%d)[:]*([%d%d]+)" )
+			-- print( "msgItem (time): "..msgItem.." > "..( hourIn or "nil")..":"..( minIn or "nil" ) )
+			if( hourIn ) then
+				targetTime.hour = tonumber( hourIn )
+			end
+			if( minIn ) then
+				targetTime.min = tonumber( minIn )
+			end
+			-- if( secIn ) then
+			-- 	targetTime.sec = tonumber( secIn ) or 0
+			-- end
+		end
+
+		-- find AM/PM and modify the time
+		_, _, AMPM = strfind( msgItem, "([ap]m)" )
+		if( AMPM and targetTime.hour <= 12 and AMPM == "pm" ) then
+			targetTime.hour = targetTime.hour + 12
+		end
+
+		a, b, plusCount = strfind( msgItem, "+([%d]*)" )
+		if a then
+			if b == 1 then
+				msgItem, msg = strsplit( " ", msg, 2 )
+				plusCount = tonumber(msgItem)
+			end
+			-- print( "found a + ", a, b, plusCount )
+			if plusCount then
+				plusUnit, msg = strsplit( " ", msg, 2 )
+				if plusUnits[plusUnit] then
+					plusValue = plusCount * plusUnits[plusUnit]
+				end
+			end
+		end
+
+		if( strfind( msgItem, "^/[%a]+" ) ) then
+			msg = msgItem..( msg and " "..msg or "")
+			msgItem = nil
+		elseif msg then
+			msgItem, msg = strsplit( " ", msg, 2 )
+		else msgItem = nil
+		end
+		-- print( date( "-->%x %X", time( targetTime ) ) )
+	end
+	--print( "Final -->"..(msg or "nil").."<--" )
+
+	targetTS = time( targetTime ) + plusValue
+	if( targetTS < time()-60) then
+		targetTS = targetTS + 86400
+		--print( date( "-->%x %X", targetTS ) )
+	end
+
+	if msg then
+		print( date( "@ %x %X do: ", targetTS )..msg )
+		atTable = wowCron.global and at_global or at_player
+		atTable[targetTS] = atTable[targetTS] or {}
+		table.insert( atTable[targetTS], msg )
+		--print( "now: "..time().." target: "..targetTS )
+	else
+		print( "Error detected with AT command.")
+	end
 end

@@ -1,10 +1,11 @@
 ## Title: WoWCron
-## Interface: 100107
-## Notes: Cron for WoW. (0.9)
+## Interface: 100200
+## Notes: Cron for WoW. (0.11)
 ## Author: opussf
-## Version: 0.9
+## Version: 0.11
 ## Description: Cron for WoW
-## SavedVariables: cron_global cron_groups cron_knownSlashCmds cron_knownEmotes
-## SavedVariablesPerCharacter: cron_player
+## IconTexture: Interface\Icons\Spell_holy_borrowedtime
+## SavedVariables: cron_global at_global cron_groups cron_knownSlashCmds cron_knownEmotes
+## SavedVariablesPerCharacter: cron_player at_player
 wowcron.lua
 wowcron.xml
