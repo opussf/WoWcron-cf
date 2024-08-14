@@ -1,7 +1,7 @@
 WOWCRON_SLUG, wowCron = ...
-WOWCRON_MSG_ADDONNAME = GetAddOnMetadata( WOWCRON_SLUG, "Title" )
-WOWCRON_MSG_VERSION   = GetAddOnMetadata( WOWCRON_SLUG, "Version")
-WOWCRON_MSG_AUTHOR    = GetAddOnMetadata( WOWCRON_SLUG, "Author" )
+WOWCRON_MSG_ADDONNAME = C_AddOns.GetAddOnMetadata( WOWCRON_SLUG, "Title" )
+WOWCRON_MSG_VERSION   = C_AddOns.GetAddOnMetadata( WOWCRON_SLUG, "Version")
+WOWCRON_MSG_AUTHOR    = C_AddOns.GetAddOnMetadata( WOWCRON_SLUG, "Author" )
 
 -- Colours
 COLOR_RED = "|cffff0000"
