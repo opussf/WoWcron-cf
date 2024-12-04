@@ -45,6 +45,7 @@ wowCron.macros = {  -- keep a 1 to 1 mapping for macro to event.
 	["@gold"]     = { ["event"] = "PLAYER_MONEY" },
 	["@level"]    = { ["event"] = "PLAYER_LEVEL_UP" },
 	["@zone"]     = { ["event"] = "ZONE_CHANGED_NEW_AREA" },
+	["@crit"]     = { ["event"] = "COMBAT_LOG_EVENT_UNFILTERED" },
 }
 wowCron.chatChannels = {
 	["/s"]    = "SAY",
@@ -81,6 +82,7 @@ function wowCron.ADDON_LOADED()
 	wowCron.lastUpdated = time()
 	wowCron.ParseAll()
 	wowCron.BuildSlashCommands()
+	wowCron.playerGUID = UnitGUID("player")
 end
 function wowCron.PLAYER_ENTERING_WORLD()
 	wowCron_Frame:UnregisterEvent( "PLAYER_ENTERING_WORLD" )
@@ -105,6 +107,32 @@ function wowCron.LOADING_SCREEN_DISABLED()
 end
 -- Support Code
 -----------------------------------------
+function wowCron.COMBAT_LOG_EVENT_UNFILTERED()
+	local _, t, _, sourceID, sourceName, sourceFlags, sourceRaidFlags,
+			destID, destName, destFlags, _, spellID, spName, _, ext1,
+			ext2, ext3, swingCrit, _, _, spellCrit = CombatLogGetCurrentEventInfo()
+
+	-- if playerGUID == sourceID then
+	-- 	if t == "SWING_DAMAGE" or t == "SPELL_DAMAGE" then
+	-- 		print( t, swingCrit, spellCrit )
+	-- 	end
+	-- end
+
+	if wowCron.playerGUID == sourceID and (( t == "SWING_DAMAGE" and swingCrit ) or ( t == "SPELL_DAMAGE" and spellCrit )) then
+		local eventMacro = "@crit"
+		local eventCount = 0
+		for _, cron in pairs( wowCron.crons ) do
+			local a,b = strfind( cron, "^"..eventMacro )
+			if a then
+				tinsert( wowCron.toRun, strsub( cron, b+2 ) )
+				eventCount = eventCount + 1
+			end
+		end
+		if eventCount == 0 then
+			wowCron_Frame:UnregisterEvent( "COMBAT_LOG_EVENT_UNFILTERED" )
+		end
+	end
+end
 function wowCron.BuildEvent( event  )
 	-- event: event name to register
 	-- cmd  : command to do at that event
@@ -241,10 +269,10 @@ function wowCron.BuildSlashCommands()
 		count = count + 1
 		--wowCron.Print(string.format("% 2i : %s :: %s", count, k, type(v)))
 		cron_knownSlashCmds[k] = v
-		lcv = 1
+		local lcv = 1
 		while true do
 			teststr = "SLASH_"..k..lcv
-			gggg = _G[ teststr ]
+			local gggg = _G[ teststr ]
 			if not gggg then break end
 			--print("_G["..teststr.."] = "..gggg)
 			cron_knownSlashCmds[gggg] = v
