@@ -436,8 +436,8 @@ function wowCron.RemoveEntry( index )
 	if index and index>0 and index<=#cronTable then
 		local entry = table.remove( cronTable, index )
 		wowCron.Print( COLOR_RED.."REMOVING: "..COLOR_END..entry )
+		wowCron.ParseAll()
 	end
-	wowCron.ParseAll()
 end
 function wowCron.AddEntry( entry )
 	if strlen( entry ) >= 9 then -- VERY mimimum size of a cron is 9 char (5x * and 4 spaces)
