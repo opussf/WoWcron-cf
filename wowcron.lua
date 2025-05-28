@@ -46,6 +46,9 @@ wowCron.macros = {  -- keep a 1 to 1 mapping for macro to event.
 	["@level"]    = { ["event"] = "PLAYER_LEVEL_UP" },
 	["@zone"]     = { ["event"] = "ZONE_CHANGED_NEW_AREA" },
 	["@crit"]     = { ["event"] = "COMBAT_LOG_EVENT_UNFILTERED" },
+	["@boss"]     = { ["event"] = "BOSS_KILL" },
+	["@combat"]   = { ["event"] = "PLAYER_REGEN_DISABLED" },
+	["@regen"]    = { ["event"] = "PLAYER_REGEN_ENABLED" },
 }
 wowCron.chatChannels = {
 	["/s"]    = "SAY",
@@ -54,6 +57,10 @@ wowCron.chatChannels = {
 	["/guild"]= "GUILD",
 	["/y"]    = "YELL",
 	["/yell"] = "YELL",
+	["/emote"]= "EMOTE",
+	["/em"]   = "EMOTE",
+	["/e"]    = "EMOTE",
+	["/me"]   = "EMOTE",
 }
 wowCron.toRun = {}
 -- events
