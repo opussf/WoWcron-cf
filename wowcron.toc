@@ -1,8 +1,8 @@
 ## Title: WoWCron
-## Interface: 110100
-## Notes: Cron for WoW. (0.18)
+## Interface: 110105
+## Notes: Cron for WoW. (0.18.1)
 ## Author: opussf
-## Version: 0.18
+## Version: 0.18.1
 ## Description: Cron for WoW
 ## IconTexture: Interface\Icons\Spell_holy_borrowedtime
 ## SavedVariables: cron_global at_global cron_groups cron_knownSlashCmds cron_knownEmotes
