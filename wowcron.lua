@@ -49,6 +49,9 @@ wowCron.macros = {  -- keep a 1 to 1 mapping for macro to event.
 	["@boss"]     = { ["event"] = "BOSS_KILL" },
 	["@combat"]   = { ["event"] = "PLAYER_REGEN_DISABLED" },
 	["@regen"]    = { ["event"] = "PLAYER_REGEN_ENABLED" },
+	["@xp"]       = { ["event"] = "PLAYER_XP_UPDATE" },
+	["@ilvl"]     = { ["event"] = "PLAYER_AVG_ITEM_LEVEL_UPDATE" },
+	["@achv"]     = { ["event"] = "ACHIEVEMENT_EARNED" },
 }
 wowCron.chatChannels = {
 	["/s"]    = "SAY",
@@ -118,13 +121,6 @@ function wowCron.COMBAT_LOG_EVENT_UNFILTERED()
 	local _, t, _, sourceID, sourceName, sourceFlags, sourceRaidFlags,
 			destID, destName, destFlags, _, spellID, spName, _, ext1,
 			ext2, ext3, swingCrit, _, _, spellCrit = CombatLogGetCurrentEventInfo()
-
-	-- if playerGUID == sourceID then
-	-- 	if t == "SWING_DAMAGE" or t == "SPELL_DAMAGE" then
-	-- 		print( t, swingCrit, spellCrit )
-	-- 	end
-	-- end
-
 	if wowCron.playerGUID == sourceID and (( t == "SWING_DAMAGE" and swingCrit ) or ( t == "SPELL_DAMAGE" and spellCrit )) then
 		local eventMacro = "@crit"
 		local eventCount = 0
@@ -473,7 +469,7 @@ function wowCron.MoveEntry( strIn )
 			end
 			wowCron.List()
 		else
-			wowCron.Print( "From and to index need to be given and be numberic." )
+			wowCron.Print( "From and to index need to be given and be numeric." )
 		end
 	else
 		wowCron.Print( "Usage: mv fromIndex toIndex" )
@@ -482,7 +478,7 @@ function wowCron.MoveEntry( strIn )
 end
 function wowCron.ListMacros()
 	wowCron.Print( "Available macros:" )
-	for macro, struct in pairs( wowCron.macros ) do
+	for macro, struct in spairs( keys ) do
 		wowCron.Print( string.format( "%s : %s \"%s\"",
 				macro, (struct.cron and "expands to" or "run on event"), (struct.cron or struct.event) ) )
 	end
@@ -596,7 +592,8 @@ function wowCron.AtAddEntry( msg )
 	local targetTime = date( "*t" )
 	targetTime.sec = 0
 
-	local plusUnits = { ["minutes"] = 60, ["hours"] = 3600, ["days"] = 86400, ["weeks"] = 604800}
+	local plusUnits = { ["minutes"] = 60, ["hours"] = 3600, ["days"] = 86400, ["weeks"] = 604800,
+			["min"] = 60, ["hour"] = 3600, ["day"] = 86400, ["week"] = 604800 }
 	local plusValue = 0
 
 	msgItem, msg = strsplit( " ", msg, 2 )
