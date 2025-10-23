@@ -478,7 +478,7 @@ function wowCron.MoveEntry( strIn )
 end
 function wowCron.ListMacros()
 	wowCron.Print( "Available macros:" )
-	for macro, struct in spairs( keys ) do
+	for macro, struct in wowCron.spairs( wowCron.macros ) do
 		wowCron.Print( string.format( "%s : %s \"%s\"",
 				macro, (struct.cron and "expands to" or "run on event"), (struct.cron or struct.event) ) )
 	end
