@@ -45,7 +45,6 @@ wowCron.macros = {  -- keep a 1 to 1 mapping for macro to event.
 	["@gold"]     = { ["event"] = "PLAYER_MONEY" },
 	["@level"]    = { ["event"] = "PLAYER_LEVEL_UP" },
 	["@zone"]     = { ["event"] = "ZONE_CHANGED_NEW_AREA" },
-	["@crit"]     = { ["event"] = "COMBAT_LOG_EVENT_UNFILTERED" },
 	["@boss"]     = { ["event"] = "BOSS_KILL" },
 	["@combat"]   = { ["event"] = "PLAYER_REGEN_DISABLED" },
 	["@regen"]    = { ["event"] = "PLAYER_REGEN_ENABLED" },
@@ -117,25 +116,6 @@ function wowCron.LOADING_SCREEN_DISABLED()
 end
 -- Support Code
 -----------------------------------------
-function wowCron.COMBAT_LOG_EVENT_UNFILTERED()
-	local _, t, _, sourceID, sourceName, sourceFlags, sourceRaidFlags,
-			destID, destName, destFlags, _, spellID, spName, _, ext1,
-			ext2, ext3, swingCrit, _, _, spellCrit = CombatLogGetCurrentEventInfo()
-	if wowCron.playerGUID == sourceID and (( t == "SWING_DAMAGE" and swingCrit ) or ( t == "SPELL_DAMAGE" and spellCrit )) then
-		local eventMacro = "@crit"
-		local eventCount = 0
-		for _, cron in pairs( wowCron.crons ) do
-			local a,b = strfind( cron, "^"..eventMacro )
-			if a then
-				tinsert( wowCron.toRun, strsub( cron, b+2 ) )
-				eventCount = eventCount + 1
-			end
-		end
-		if eventCount == 0 then
-			wowCron_Frame:UnregisterEvent( "COMBAT_LOG_EVENT_UNFILTERED" )
-		end
-	end
-end
 function wowCron.BuildEvent( event  )
 	-- event: event name to register
 	-- cmd  : command to do at that event
