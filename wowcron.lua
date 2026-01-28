@@ -77,7 +77,7 @@ function wowCron.OnLoad()
 end
 function wowCron.OnUpdate()
 	-- if there are still events in the queue to process
-	if( #wowCron.toRun > 0 ) then
+	if( #wowCron.toRun > 0 and not InCombatLockdown() ) then
 		wowCron.RunNowList()
 	end
 	local nowTS = time()
@@ -218,7 +218,7 @@ function wowCron.CallEmote( slash, parameters )
 	token = string.upper(strsub( slash, -(strlen( slash )-1) ))
 	for _,v in pairs( cron_knownEmotes ) do
 		if token == v then
-			DoEmote(token)
+			C_ChatInfo.PerformEmote(token)
 			return true
 		end
 	end
@@ -229,7 +229,7 @@ function wowCron.SendMessage( slash, parameters )
 	-- look for the standard chat commands and send the contents of parameters to the corrisponding channel
 	for cmd, channel in pairs( wowCron.chatChannels ) do
 		if slash == cmd then
-			SendChatMessage( parameters, channel, nil, nil )
+			C_ChatInfo.SendChatMessage( parameters, channel, nil, nil )
 			return true
 		end
 	end
