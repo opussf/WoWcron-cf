@@ -51,7 +51,8 @@ wowCron.macros = {  -- keep a 1 to 1 mapping for macro to event.
 	["@xp"]       = { ["event"] = "PLAYER_XP_UPDATE" },
 	["@ilvl"]     = { ["event"] = "PLAYER_AVG_ITEM_LEVEL_UPDATE" },
 	["@achv"]     = { ["event"] = "ACHIEVEMENT_EARNED" },
-	["@ready"]    = { ["event"] = "READY_CHECK" },
+	["@rcheck"]   = { ["event"] = "READY_CHECK" },
+	["@rdone"]    = { ["event"] = "READY_CHECK_FINISHED" },
 }
 wowCron.chatChannels = {
 	["/s"]    = "SAY",
